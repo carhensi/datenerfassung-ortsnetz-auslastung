@@ -27,7 +27,7 @@ const CONFIG = {
 };
 
 const API_URL = 'https://www.ortsnetz-auslastung.de/v1/measurements';
-const VERSION = 'mqtt-0.1.0';
+const VERSION = 'mqtt-0.2.0';
 
 const values = new Map();
 
