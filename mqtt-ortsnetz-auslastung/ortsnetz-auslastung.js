@@ -1,6 +1,6 @@
 /*
  * Ortsnetz-Auslastung for MQTT
- * Version: 0.1.0
+ * Version: 0.2.0
  *
  * Requires Node.js >= 18 and the npm package "mqtt".
  */
@@ -21,6 +21,9 @@ const CONFIG = {
     maxValueAgeMs: 1 * 60 * 1000,
     uploadIntervalMs: 5 * 60 * 1000,
     smartmeterModel: 'SDM630',
+    plant_capacity_kwp: 5.81 + 1.6, // in kWp
+    solarForecastTopic: 'evcc/site/forecast/solar',
+    solarForecastJsonKey: 'today.energy'
 };
 
 const API_URL = 'https://www.ortsnetz-auslastung.de/v1/measurements';
@@ -28,7 +31,7 @@ const VERSION = 'mqtt-0.1.0';
 
 const values = new Map();
 
-function parsePayload(payload) {
+function parsePayload(payload, jsonKey = CONFIG.jsonKey) {
     const text = payload.toString().trim();
     const direct = Number(text);
 
@@ -38,8 +41,8 @@ function parsePayload(payload) {
 
     try {
         const parsed = JSON.parse(text);
-        const picked = CONFIG.jsonKey
-            ? CONFIG.jsonKey.split('.').reduce((node, key) => (node == null ? undefined : node[key]), parsed)
+        const picked = jsonKey
+            ? jsonKey.split('.').reduce((node, key) => (node == null ? undefined : node[key]), parsed)
             : parsed;
 
         return Number(picked);
@@ -63,6 +66,7 @@ async function uploadMeasurement() {
     const l2 = currentValue(CONFIG.l2Topic);
     const l3 = currentValue(CONFIG.l3Topic);
     const frequency = CONFIG.frequencyTopic ? currentValue(CONFIG.frequencyTopic) : null;
+    const pvForecast = CONFIG.solarForecastTopic ? currentValue(CONFIG.solarForecastTopic) : null;
 
     // Do not report missing or implausible measurements.
     if (![l1, l2, l3].every((value) => Number.isFinite(value) && value >= 150 && value <= 300)) {
@@ -78,7 +82,9 @@ async function uploadMeasurement() {
         l2_v: l2,
         l3_v: l3,
         integration_version: VERSION,
-        smartmeter_model: CONFIG.smartmeterModel
+        smartmeter_model: CONFIG.smartmeterModel,
+        pv_forecast_kwh: pvForecast,
+        plant_capacity_kwp: CONFIG.plant_capacity_kwp,
     };
 
     if (Number.isFinite(frequency) && frequency >= 45 && frequency <= 55) {
@@ -139,7 +145,8 @@ client.on('error', (error) => {
 });
 
 client.on('message', (topic, payload) => {
-    const value = parsePayload(payload);
+    const jsonKey = topic === CONFIG.solarForecastTopic ? CONFIG.solarForecastJsonKey : CONFIG.jsonKey;
+    const value = parsePayload(payload, jsonKey);
 
     if (Number.isFinite(value)) {
         values.set(topic, { value, receivedAt: Date.now() });
