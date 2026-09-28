@@ -8,9 +8,9 @@
 const mqtt = require('mqtt');
 
 const CONFIG = {
-    latitude: 51.264724,
-    longitude: 6.557062,
-    brokerUrl: 'mqtt://k9s:31883',
+    latitude: 52.520008,
+    longitude: 13.404954,
+    brokerUrl: 'mqtt://broker.local:1883',
     username: '',
     password: '',
     l1Topic: 'mbmd/sdm1-1/Voltage/L1',
@@ -18,10 +18,10 @@ const CONFIG = {
     l3Topic: 'mbmd/sdm1-1/Voltage/L3',
     frequencyTopic: 'mbmd/sdm1-1/Frequency', // optional: set to '' when unavailable
     jsonKey: '', // optional: key inside a JSON payload, e.g. 'value' or 'data.voltage'
-    maxValueAgeMs: 1 * 60 * 1000,
+    maxValueAgeMs: 6 * 60 * 1000,
     uploadIntervalMs: 5 * 60 * 1000,
     smartmeterModel: 'SDM630',
-    plant_capacity_kwp: 5.81 + 1.6, // in kWp
+    plant_capacity_kwp: 5.0, // in kWp
     solarForecastTopic: 'evcc/site/forecast/solar',
     solarForecastJsonKey: 'today.energy'
 };
@@ -83,9 +83,12 @@ async function uploadMeasurement() {
         l3_v: l3,
         integration_version: VERSION,
         smartmeter_model: CONFIG.smartmeterModel,
-        pv_forecast_kwh: pvForecast/1000, //kWh
         plant_capacity_kwp: CONFIG.plant_capacity_kwp,
     };
+
+    if (Number.isFinite(pvForecast) && pvForecast >= 0) {
+        payload.pv_forecast_kwh = pvForecast / 1000; // MQTT publishes Wh; the API expects kWh.
+    }
 
     if (Number.isFinite(frequency) && frequency >= 45 && frequency <= 55) {
         payload.grid_frequency_hz = frequency;

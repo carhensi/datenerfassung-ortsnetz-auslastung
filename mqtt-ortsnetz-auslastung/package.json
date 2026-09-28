@@ -19,7 +19,7 @@
     "mqtt": "^5.5.0"
   },
    "config": {
-    "imageRepo": "192.168.2.145:32000/meisel2000/node_ortsnetz_auslastung",
+    "imageRepo": "ghcr.io/your-github-user/mqtt-ortsnetz-auslastung",
     "imageName": "node_ortsnetz_auslastung",
     "imagePort": "0000"
   }
