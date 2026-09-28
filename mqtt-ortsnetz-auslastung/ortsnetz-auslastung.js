@@ -1,6 +1,6 @@
 /*
  * Ortsnetz-Auslastung for MQTT
- * Version: 0.2.0
+ * Version: 0.3.0
  *
  * Requires Node.js >= 18 and the npm package "mqtt".
  */
@@ -27,7 +27,7 @@ const CONFIG = {
 };
 
 const API_URL = 'https://www.ortsnetz-auslastung.de/v1/measurements';
-const VERSION = 'mqtt-0.2.0';
+const VERSION = 'mqtt-0.3.0';
 
 const values = new Map();
 
@@ -83,7 +83,7 @@ async function uploadMeasurement() {
         l3_v: l3,
         integration_version: VERSION,
         smartmeter_model: CONFIG.smartmeterModel,
-        pv_forecast_kwh: pvForecast,
+        pv_forecast_kwh: pvForecast/1000, //kWh
         plant_capacity_kwp: CONFIG.plant_capacity_kwp,
     };
 
@@ -122,7 +122,7 @@ async function uploadMeasurement() {
     }
 }
 
-const topics = [CONFIG.l1Topic, CONFIG.l2Topic, CONFIG.l3Topic, CONFIG.frequencyTopic].filter(Boolean);
+const topics = [CONFIG.l1Topic, CONFIG.l2Topic, CONFIG.l3Topic, CONFIG.frequencyTopic, CONFIG.solarForecastTopic].filter(Boolean);
 
 const client = mqtt.connect(CONFIG.brokerUrl, {
     username: CONFIG.username || undefined,
