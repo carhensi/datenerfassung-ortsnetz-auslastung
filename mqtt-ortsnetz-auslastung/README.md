@@ -16,7 +16,8 @@ Geeignet für alle Smart-Meter-Gateways, die ihre Messwerte per MQTT veröffentl
 2. `npm install` ausführen.
 3. Im `CONFIG`-Block von [ortsnetz-auslastung.js](ortsnetz-auslastung.js) `latitude`, `longitude`, `brokerUrl` und die Topics anpassen.
 4. Falls keine Frequenz verfügbar ist, `frequencyTopic: ''` eintragen.
-5. `npm start` ausführen. Nach dem Verbinden erfolgt ein erster Upload, danach alle fünf Minuten.
+5. Falls keine PV-Prognose verfügbar ist, `solarForecastTopic: ''` eintragen.
+6. `npm start` ausführen. Nach dem Verbinden erfolgt ein erster Upload, danach alle fünf Minuten.
 
 Koordinaten lassen sich mit [OpenStreetMap](https://www.openstreetmap.org/) bestimmen: Standort suchen, Rechtsklick auf die Karte und **„Abfrage starten“** wählen.
 
@@ -30,9 +31,12 @@ Koordinaten lassen sich mit [OpenStreetMap](https://www.openstreetmap.org/) best
 | `l1Topic`, `l2Topic`, `l3Topic` | Topics mit der Spannung je Phase in Volt |
 | `frequencyTopic` | Topic mit der Netzfrequenz in Hertz; `''` wenn nicht vorhanden |
 | `jsonKey` | Schlüssel innerhalb eines JSON-Payloads, z. B. `value` oder `data.voltage`; leer lassen bei reinen Zahlenwerten |
+| `solarForecastTopic` | Optionales Topic mit der EVCC PV-Tagesprognose in Wh; `''` wenn nicht vorhanden |
+| `solarForecastJsonKey` | Schlüssel innerhalb des JSON-Payloads der PV-Prognose, standardmäßig `today.energy` |
 | `maxValueAgeMs` | Maximales Alter eines empfangenen Werts; ältere Werte gelten als fehlend |
 | `uploadIntervalMs` | Abstand zwischen zwei Uploads |
 | `smartmeterModel` | Freie Bezeichnung des Messgeräts |
+| `plant_capacity_kwp` | Installierte PV-Leistung in kWp |
 
 Beispiel:
 
@@ -48,9 +52,12 @@ const CONFIG = {
     l3Topic: 'mbmd/sdm1-1/Voltage/L3',
     frequencyTopic: 'mbmd/sdm1-1/Frequency',
     jsonKey: '',
+    solarForecastTopic: 'evcc/site/forecast/solar',
+    solarForecastJsonKey: 'today.energy',
     maxValueAgeMs: 1 * 60 * 1000,
     uploadIntervalMs: 5 * 60 * 1000,
     smartmeterModel: 'SDM630',
+    plant_capacity_kwp: 7.41,
 };
 ```
 
@@ -75,6 +82,8 @@ Das Ziel-Repository steht unter `config.imageRepo` in [package.json](package.jso
 - Spannungswerte außerhalb von 150–300 V werden nicht übertragen.
 - Die Frequenz wird nur gesendet, wenn sie zwischen 45 und 55 Hz liegt.
 - Werte, die älter als `maxValueAgeMs` sind, gelten als fehlend; der Upload wird übersprungen.
+- Die PV-Prognose wird in Wh per MQTT von evcc empfangen und für die API in kWh umgerechnet.
+- Die installierte PV-Leistung wird mit jedem Upload übertragen. Ohne PV-Prognose-Topic wird `pv_forecast_kwh` als `0` übertragen.
 - Übertragungen erhalten eine Zeitüberschreitung von 10 Sekunden.
 - Meldet die API den Ampelstatus `yellow`, erscheint eine Warnung im Log.
 - Bei `Wert aus … nicht lesbar` Topic-Payload prüfen und ggf. `jsonKey` setzen.
@@ -97,8 +106,10 @@ Beispiel-Payload:
   "l2_v": 229.9,
   "l3_v": 230.4,
   "grid_frequency_hz": 50,
+  "pv_forecast_kwh": 4.2,
+  "plant_capacity_kwp": 7.41,
   "smartmeter_model": "SDM630",
-  "integration_version": "mqtt-0.1.0"
+  "integration_version": "mqtt-0.3.0"
 }
 ```
 
