@@ -8,8 +8,10 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 - [Tasmota SML-Lesekopf](#tasmota-sml-lesekopf)
 - [Home Assistant](#home-assistant)
 - [ioBroker](#iobroker)
+- [MQTT](#mqtt)
 - [KOSTAL KSEM](#kostal-ksem)
 - [openHAB](#openhab)
+- [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
 - [API](#api)
 
 ## Integrationen
@@ -21,6 +23,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 | [Home Assistant](#home-assistant) | Vorhandene Spannungssensoren | Home Assistant / HACS | HTTPS | Home-Assistant-Installationen |
 | [ioBroker](#iobroker) | Vorhandene Spannungsdatenpunkte | ioBroker JavaScript | HTTPS | ioBroker-Installationen |
 | [KOSTAL KSEM](#kostal-ksem) | KOSTAL Smart Energy Meter | Node-RED / Modbus | HTTPS | KSEM mit Node-RED |
+| [MQTT](#mqtt) | MQTT-Topics | Node.js / Docker | HTTPS | Smart-Meter-Gateways mit MQTT und EVCC |
 | [openHAB](#openhab) | Vorhandene Smart-Meter-Items | openHAB JavaScript-Regel | HTTPS | openHAB-Installationen |
 
 ## Shelly Pro 3EM und Pro EM50
@@ -58,6 +61,17 @@ Das Script für den JavaScript-Adapter liest drei konfigurierte Spannungsdatenpu
 
 Das Script verwendet den eingebauten Helfer `httpPost` und benötigt keine zusätzliche npm-Abhängigkeit.
 
+## MQTT
+
+Ein eigenständiges Node.js-Script abonniert drei Spannungs-Topics und optional ein Frequenz-Topic auf einem MQTT-Broker. Es unterstützt außerdem eine PV-Tagesprognose, zum Beispiel von evcc, und überträgt die Messwerte nach einem ersten Upload alle fünf Minuten per HTTPS.
+
+- Ordner: lokal `mqtt-ortsnetz-auslastung`
+- Messquelle: Smart-Meter-Gateways oder andere Systeme mit MQTT-Topics für L1/L2/L3
+- Voraussetzung: Node.js ab Version 24 oder Docker, erreichbarer MQTT-Broker und Internetzugang
+
+Die Konfiguration erfolgt im `CONFIG`-Block des Scripts. Unterstützt werden numerische Payloads sowie JSON-Payloads mit konfigurierbarem Schlüssel. Details stehen in der [MQTT-README](mqtt-ortsnetz-auslastung/README.md).
+
+=======
 ## KOSTAL KSEM
 
 Die KSEM-Integration ist ein importierbarer Node-RED-Flow. Sie liest L1, L2, L3 und Frequenz über Modbus, baut den API-Payload und wertet die API-Antwort aus.
@@ -78,6 +92,8 @@ Die openHAB-Integration besteht aus einer JavaScript-Regel und einem Node.js-HTT
 - Voraussetzungen: openHAB JavaScript Scripting sowie Node.js unter dem konfigurierten Helferpfad
 
 Vor der Aktivierung Item-IDs sowie Node.js- und Helferpfade anpassen.
+
+## Gemeinsame Eigenschaften
 
 ## Datenumfang
 
