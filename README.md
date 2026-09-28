@@ -1,88 +1,102 @@
 # Datenerfassung für Ortsnetz-Auslastung
 
-Diese Sammlung beschreibt die verfügbaren Wege, Spannungen im lokalen Stromnetz an die Ortsnetz-Auslastung-API zu übertragen. Alle Varianten senden mindestens die Spannungen von L1, L2 und L3, einen UTC-Zeitstempel und den ungefähren Standort. 
+Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an die Ortsnetz-Auslastung-API senden. Sie übertragen Spannungswerte, einen Zeitstempel und einen ungefähren Standort. Es ist kein API-Schlüssel erforderlich.
 
 ## Schnellnavigation
 
-- [Integrationen im Überblick](#integrationen-im-überblick)
-- [Home Assistant](#home-assistant)
-- [Shelly Pro 3EM](#shelly-pro-3em)
+- [Shelly Pro 3EM und Pro EM50](#shelly-pro-3em-und-pro-em50)
 - [Tasmota SML-Lesekopf](#tasmota-sml-lesekopf)
+- [Home Assistant](#home-assistant)
 - [ioBroker](#iobroker)
-- [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
+- [KOSTAL KSEM](#kostal-ksem)
+- [openHAB](#openhab)
 - [API](#api)
-- [Standortkoordinaten](#standortkoordinaten)
 
-## Integrationen im Überblick
+## Integrationen
 
-| Integration | Messquelle | Laufzeit | Upload | Geeignet für |
+| Integration | Datenquelle | Laufzeit | Übertragung | Geeignet für |
 | --- | --- | --- | --- | --- |
-| [Shelly Pro 3EM](#shelly-pro-3em) | Direkte 3-Phasen-Messung | Shelly Script | HTTPS | Installation auf dem Shelly |
-| [Tasmota](#tasmota-sml-lesekopf) | Optischer IR-Lesekopf am Stromzähler | ESP32/Tasmota-Script | HTTPS/Webquery | Installation auf dem Lesekopf |
-| [Home Assistant](#home-assistant) | Bestehende Spannungs-Sensoren | Home Assistant / HACS | HTTPS | Bestehende Home-Assistant-Installation |
-| [ioBroker](#iobroker) | Vorhandene Spannungs-Datenpunkte | ioBroker JavaScript | HTTPS | Bestehende ioBroker-Installation |
+| [Shelly Pro 3EM und Pro EM50](#shelly-pro-3em-und-pro-em50) | Direkte Spannungsmessung | Shelly Script | HTTPS | Shelly-Installationen |
+| [Tasmota SML-Lesekopf](#tasmota-sml-lesekopf) | Optische Smart-Meter-Schnittstelle | ESP32 / Tasmota Script | HTTPS / WebQuery | SML-fähige Stromzähler |
+| [Home Assistant](#home-assistant) | Vorhandene Spannungssensoren | Home Assistant / HACS | HTTPS | Home-Assistant-Installationen |
+| [ioBroker](#iobroker) | Vorhandene Spannungsdatenpunkte | ioBroker JavaScript | HTTPS | ioBroker-Installationen |
+| [KOSTAL KSEM](#kostal-ksem) | KOSTAL Smart Energy Meter | Node-RED / Modbus | HTTPS | KSEM mit Node-RED |
+| [openHAB](#openhab) | Vorhandene Smart-Meter-Items | openHAB JavaScript-Regel | HTTPS | openHAB-Installationen |
 
-## Shelly Pro 3EM und Pro 50EM
+## Shelly Pro 3EM und Pro EM50
 
-Ein JavaScript für Shelly Plus/Pro liest die drei Spannungen direkt über `em:0` und sendet sie im Fünf-Minuten-Takt. Das Script prüft dabei Werte außerhalb von 150–300 V.
+Skripte für Shelly Pro 3EM, Pro 3EM-400 und Pro EM50. Sie senden sofort nach dem Start und danach alle fünf Minuten. Der einphasige Pro EM50 kennzeichnet nicht vorhandene L2/L3-Phasen mit `-1`; die API akzeptiert diese Werte.
 
-- Ordner: `shelly-ortsnetz-auslastung`
-- Messquelle: Shelly Pro 3EM und Shelly Pro 50EM
-- Voraussetzung: Shelly-Scripting, WLAN und Internetzugang
+- Ordner: [`shelly-ortsnetz-auslastung`](shelly-ortsnetz-auslastung)
+- Voraussetzungen: unterstütztes Shelly-Gerät, Shelly Scripting, NTP und Internetzugang
+- Skripte: [`pro-3EM-ortsnetz-auslastung.js`](shelly-ortsnetz-auslastung/pro-3EM-ortsnetz-auslastung.js) und [`pro-EM50-ortsnetz-auslastung.js`](shelly-ortsnetz-auslastung/pro-EM50-ortsnetz-auslastung.js)
 
-Siehe die Installations- und Konfigurationshinweise im jeweiligen Repository.
+Vor dem Aktivieren Breitengrad und Längengrad konfigurieren.
 
 ## Tasmota SML-Lesekopf
 
-Ein ESP32 mit optischem Lesekopf liest SML-Telegramme des Stromzählers und überträgt die OBIS-Werte für L1, L2, L3 und optional die Frequenz direkt per `WebQuery`.
+Ein ESP32 mit optischem Lesekopf dekodiert SML-Telegramme des Stromzählers und sendet L1, L2, L3 sowie optional die Frequenz per WebQuery.
 
-- Ordner: lokal `tasmota-ortsnetz-auslastung`
-- Messquelle: digitaler Stromzähler mit optischer Schnittstelle
-- Voraussetzung: ESP32 (HTTPS), selbst kompilierte Tasmota-Firmware mit `USE_SCRIPT` und `USE_SML_M`, freigeschaltete Info-Schnittstelle des Zählers
+- Ordner: [`tasmota-ortsnetz-auslastung`](tasmota-ortsnetz-auslastung)
+- Voraussetzungen: ESP32 für HTTPS, Tasmota mit `USE_SCRIPT` und `USE_SML_M` sowie eine freigeschaltete Info-Schnittstelle des Zählers
 
-Die Pinbelegung, Baudrate und OBIS-Werte können je Zählermodell abweichen. Das enthaltene Beispiel zielt auf binäres SML deutscher Basiszähler.
+GPIO, Baudrate und OBIS-Codes hängen vom Zählermodell ab.
 
 ## Home Assistant
 
-Die HACS-Integration überträgt drei vorhandene Spannungs-Sensoren aus Home Assistant, optional die Netzfrequenz sowie Angaben zur PV-Anlage. Nach einem ersten Upload sendet sie alle fünf Minuten.
+Die HACS-Integration überträgt drei ausgewählte Spannungssensoren sowie optional Frequenz- und PV-Daten.
 
 - Repository: [ha_ortsnetz_auslastung](https://github.com/thomaslehmann1234/ha_ortsnetz_auslastung)
-- Messquelle: beliebige numerische Home-Assistant-Sensor-Entitäten für L1/L2/L3 in Volt
-- Voraussetzung: Home Assistant mit installiertem HACS
-
-Die Einrichtung erfolgt in HACS als benutzerdefiniertes Repository. In der Integration werden die drei Spannungs-Sensoren ausgewählt; Standort, Netzfrequenz, PV-Anlagengröße und PV-Forecast sind optional konfigurierbar.
+- Voraussetzungen: Home Assistant und HACS
 
 ## ioBroker
 
-Ein Script für den ioBroker-JavaScript-Adapter liest drei vorhandene Datenpunkte für die Phasenspannungen. Die Messwerte können beispielsweise von einem Shelly-, Smart-Meter- oder Modbus-Adapter, Tasmota Adapter stammen.
+Das Script für den JavaScript-Adapter liest drei konfigurierte Spannungsdatenpunkte und optional die Frequenz.
 
-- Ordner: lokal `iobroker-ortsnetz-auslastung`
-- Messquelle: Smartmeter ioBroker-Datenpunkte für L1/L2/L3
-- Voraussetzung: `ioBroker.javascript` ab 7.9.0
+- Ordner: [`iobroker-ortsnetz-auslastung`](iobroker-ortsnetz-auslastung)
+- Voraussetzung: `ioBroker.javascript` ab Version 7.9
 
-Es gibt keine zusätzlichen npm-Abhängigkeiten: Das Script nutzt `httpPost` aus dem JavaScript-Adapter.
+Das Script verwendet den eingebauten Helfer `httpPost` und benötigt keine zusätzliche npm-Abhängigkeit.
 
-## Gemeinsame Eigenschaften
+## KOSTAL KSEM
 
-- Intervall: fünf Minuten
-- Pflichtwerte: Zeit, Standort und drei Phasenspannungen
-- Plausibilitätsprüfung: Spannungen nur im Bereich 150–300 V
-- Optional: Netzfrequenz (45–55 Hz), Anlagenleistung und PV-Prognose
-- Datenschutz: Keine Zählernummer, Seriennummer, IP-Adresse, Leistung oder Energieverbrauch erforderlich
+Die KSEM-Integration ist ein importierbarer Node-RED-Flow. Sie liest L1, L2, L3 und Frequenz über Modbus, baut den API-Payload und wertet die API-Antwort aus.
+
+- Ordner: [`kesm-ortsnetz-auslastung`](kesm-ortsnetz-auslastung)
+- Flow: [`kesm.js`](kesm-ortsnetz-auslastung/kesm.js)
+- Voraussetzungen: Node-RED mit Modbus- und buffer-parser-Nodes sowie Modbus-Zugriff auf den KSEM
+
+Vor der Bereitstellung Modbus-Server und Beispielkoordinaten in der Payload-Funktion anpassen. Der mitgelieferte Flow liest und sendet alle fünf Minuten.
+
+## openHAB
+
+Die openHAB-Integration besteht aus einer JavaScript-Regel und einem Node.js-HTTPS-Helfer. Die Regel liest konfigurierte Smart-Meter-Items alle fünf Minuten und ruft den Helfer auf.
+
+- Ordner: [`openhab-ortsnetz-auslastung`](openhab-ortsnetz-auslastung)
+- Regel: [`ortsnetz-auslastung.js`](openhab-ortsnetz-auslastung/ortsnetz-auslastung.js)
+- Helfer: [`ortsnetz_senden.js`](openhab-ortsnetz-auslastung/ortsnetz_senden.js)
+- Voraussetzungen: openHAB JavaScript Scripting sowie Node.js unter dem konfigurierten Helferpfad
+
+Vor der Aktivierung Item-IDs sowie Node.js- und Helferpfade anpassen.
+
+## Datenumfang
+
+- Übertragungsintervall: integrationsabhängig, die meisten Skripte verwenden fünf Minuten
+- Pflichtfelder: Zeitstempel, Standort und Spannungswerte; einphasige Messungen verwenden für nicht vorhandene L2/L3-Phasen `-1`
+- Optionale Felder: Netzfrequenz, PV-Leistung und PV-Prognose
+- Keine Übertragung von Zählernummern, Gerätekennungen, Energiezählern oder IP-Adressen
 
 ## API
 
-Details und Beispiele stehen in [API.md](API.md).
-
-Kurzfassung:
+Die vollständige Request- und Response-Referenz steht in [API.md](API.md).
 
 ```text
 POST https://www.ortsnetz-auslastung.de/v1/measurements
 Content-Type: application/json
 ```
 
-Eine erfolgreich angenommene Messung liefert `202 Accepted` zurück.
+Bei erfolgreicher Annahme liefert der Service `202 Accepted`.
 
-## Standortkoordinaten
+## Koordinaten
 
-Latitude und Longitude können direkt über [OpenStreetMap](https://www.openstreetmap.org/) ermittelt werden: Standort suchen, Rechtsklick auf die Karte und **„Abfrage starten“** wählen.
+Koordinaten lassen sich über [OpenStreetMap](https://www.openstreetmap.org/) bestimmen: Ort suchen, mit der rechten Maustaste auf die Karte klicken und **„Abfrage starten“** auswählen.
