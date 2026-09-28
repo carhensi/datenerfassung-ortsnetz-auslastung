@@ -9,6 +9,7 @@ Diese Sammlung beschreibt die verfügbaren Wege, Spannungen im lokalen Stromnetz
 - [Shelly Pro 3EM](#shelly-pro-3em)
 - [Tasmota SML-Lesekopf](#tasmota-sml-lesekopf)
 - [ioBroker](#iobroker)
+- [MQTT](#mqtt)
 - [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
 - [API](#api)
 - [Standortkoordinaten](#standortkoordinaten)
@@ -21,6 +22,7 @@ Diese Sammlung beschreibt die verfügbaren Wege, Spannungen im lokalen Stromnetz
 | [Tasmota](#tasmota-sml-lesekopf) | Optischer IR-Lesekopf am Stromzähler | ESP32/Tasmota-Script | HTTPS/Webquery | Installation auf dem Lesekopf |
 | [Home Assistant](#home-assistant) | Bestehende Spannungs-Sensoren | Home Assistant / HACS | HTTPS | Bestehende Home-Assistant-Installation |
 | [ioBroker](#iobroker) | Vorhandene Spannungs-Datenpunkte | ioBroker JavaScript | HTTPS | Bestehende ioBroker-Installation |
+| [MQTT](#mqtt) | MQTT-Topics | Node.js / Docker | HTTPS | Smart-Meter-Gateways mit MQTT und EVCC |
 
 ## Shelly Pro 3EM und Pro 50EM
 
@@ -61,6 +63,16 @@ Ein Script für den ioBroker-JavaScript-Adapter liest drei vorhandene Datenpunkt
 - Voraussetzung: `ioBroker.javascript` ab 7.9.0
 
 Es gibt keine zusätzlichen npm-Abhängigkeiten: Das Script nutzt `httpPost` aus dem JavaScript-Adapter.
+
+## MQTT
+
+Ein eigenständiges Node.js-Script abonniert drei Spannungs-Topics und optional ein Frequenz-Topic auf einem MQTT-Broker. Es unterstützt außerdem eine PV-Tagesprognose, zum Beispiel von evcc, und überträgt die Messwerte nach einem ersten Upload alle fünf Minuten per HTTPS.
+
+- Ordner: lokal `mqtt-ortsnetz-auslastung`
+- Messquelle: Smart-Meter-Gateways oder andere Systeme mit MQTT-Topics für L1/L2/L3
+- Voraussetzung: Node.js ab Version 24 oder Docker, erreichbarer MQTT-Broker und Internetzugang
+
+Die Konfiguration erfolgt im `CONFIG`-Block des Scripts. Unterstützt werden numerische Payloads sowie JSON-Payloads mit konfigurierbarem Schlüssel. Details stehen in der [MQTT-README](mqtt-ortsnetz-auslastung/README.md).
 
 ## Gemeinsame Eigenschaften
 
