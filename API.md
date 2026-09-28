@@ -17,8 +17,8 @@ Der Endpoint ist öffentlich und benötigt keine Authentifizierung. Jede Messung
 | `latitude` | Zahl | Ja | Breitengrad von -90 bis 90 |
 | `longitude` | Zahl | Ja | Längengrad von -180 bis 180 |
 | `l1_v` | Zahl | Ja | Spannung Phase L1 in Volt, größer als 0 und maximal 500 |
-| `l2_v` | Zahl | Ja | Spannung Phase L2 in Volt, größer als 0 und maximal 500 |
-| `l3_v` | Zahl | Ja | Spannung Phase L3 in Volt, größer als 0 und maximal 500 |
+| `l2_v` | Zahl | Ja | Spannung Phase L2 in Volt, größer als 0 und maximal 500; bei einphasigen Messungen `-1` |
+| `l3_v` | Zahl | Ja | Spannung Phase L3 in Volt, größer als 0 und maximal 500; bei einphasigen Messungen `-1` |
 | `grid_frequency_hz` | Zahl | Nein | Netzfrequenz in Hertz, 45 bis 55 |
 | `plant_capacity_kwp` | Zahl | Nein | Installierte PV-Leistung in kWp, größer als 0 und maximal 1000 |
 | `pv_forecast_kwh` | Zahl | Nein | PV-Prognose in kWh, 0 bis 100000 |
