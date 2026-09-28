@@ -22,12 +22,12 @@ Diese Sammlung beschreibt die verfügbaren Wege, Spannungen im lokalen Stromnetz
 | [Home Assistant](#home-assistant) | Bestehende Spannungs-Sensoren | Home Assistant / HACS | HTTPS | Bestehende Home-Assistant-Installation |
 | [ioBroker](#iobroker) | Vorhandene Spannungs-Datenpunkte | ioBroker JavaScript | HTTPS | Bestehende ioBroker-Installation |
 
-## Shelly Pro 3EM
+## Shelly Pro 3EM und Pro 50EM
 
 Ein JavaScript für Shelly Plus/Pro liest die drei Spannungen direkt über `em:0` und sendet sie im Fünf-Minuten-Takt. Das Script prüft dabei Werte außerhalb von 150–300 V.
 
 - Ordner: `shelly-ortsnetz-auslastung`
-- Messquelle: Shelly Pro 3EM
+- Messquelle: Shelly Pro 3EM und Shelly Pro 50EM
 - Voraussetzung: Shelly-Scripting, WLAN und Internetzugang
 
 Siehe die Installations- und Konfigurationshinweise im jeweiligen Repository.
