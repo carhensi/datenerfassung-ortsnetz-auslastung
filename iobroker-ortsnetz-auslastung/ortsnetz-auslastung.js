@@ -1,6 +1,6 @@
 /*
  * Ortsnetz-Auslastung for ioBroker JavaScript adapter
- * Version: 0.1.0
+ * Version: 0.2.0
  *
  * Requires ioBroker.javascript >= 7.9.0 for httpPost().
  */
@@ -12,26 +12,33 @@ const CONFIG = {
     l2State: 'smartmeter.0.voltage_l2',
     l3State: 'smartmeter.0.voltage_l3',
     frequencyState: 'smartmeter.0.frequency', // optional: set to '' when unavailable
+    plantCapacityKwp: null, // optional fixed value, e.g. 10.0
+    pvForecastState: '', // optional forecast data point in kWh
+    smartmeterModel: 'ioBroker',
 };
 
 const API_URL = 'https://www.ortsnetz-auslastung.de/v1/measurements';
-const VERSION = 'iobroker-0.1.0';
+const VERSION = 'iobroker-0.2.0';
 
 function numberState(id) {
     if (!id) {
         return Promise.resolve(null);
     }
 
-    return getStateAsync(id).then((state) => Number(state?.val));
+    return getStateAsync(id).then((state) => {
+        const value = state?.val;
+        return value === null || value === undefined || value === '' ? null : Number(value);
+    });
 }
 
 async function uploadMeasurement() {
     try {
-        const [l1, l2, l3, frequency] = await Promise.all([
+        const [l1, l2, l3, frequency, pvForecast] = await Promise.all([
             numberState(CONFIG.l1State),
             numberState(CONFIG.l2State),
             numberState(CONFIG.l3State),
             numberState(CONFIG.frequencyState),
+            numberState(CONFIG.pvForecastState),
         ]);
 
         // Do not report missing or implausible measurements.
@@ -47,11 +54,18 @@ async function uploadMeasurement() {
             l1_v: l1,
             l2_v: l2,
             l3_v: l3,
+            smartmeter_model: CONFIG.smartmeterModel,
             integration_version: VERSION,
         };
 
         if (Number.isFinite(frequency) && frequency >= 45 && frequency <= 55) {
             payload.grid_frequency_hz = frequency;
+        }
+        if (Number.isFinite(CONFIG.plantCapacityKwp) && CONFIG.plantCapacityKwp > 0 && CONFIG.plantCapacityKwp <= 1000) {
+            payload.plant_capacity_kwp = CONFIG.plantCapacityKwp;
+        }
+        if (Number.isFinite(pvForecast) && pvForecast >= 0 && pvForecast <= 100000) {
+            payload.pv_forecast_kwh = pvForecast;
         }
 
         httpPost(API_URL, payload, { timeout: 10000, headers: { 'Content-Type': 'application/json' } }, (error, response) => {

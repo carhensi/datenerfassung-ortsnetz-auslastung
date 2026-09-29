@@ -1,6 +1,6 @@
 # Ortsnetz-Auslastung für ioBroker
 
-Ein kompaktes Script für den ioBroker-JavaScript-Adapter. Es liest drei vorhandene Spannungs-Datenpunkte und optional die Netzfrequenz, prüft die Werte und übermittelt sie alle fünf Minuten direkt per HTTPS an die Ortsnetz-Auslastung-API.
+Ein kompaktes Script für den ioBroker-JavaScript-Adapter. Es liest drei vorhandene Spannungs-Datenpunkte sowie optional Netzfrequenz und PV-Prognose. Die Werte werden alle fünf Minuten direkt per HTTPS an die Ortsnetz-Auslastung-API übertragen.
 
 Es ist kein eigener ioBroker-Adapter und kein zusätzlicher Dienst notwendig.
 
@@ -15,7 +15,7 @@ Es ist kein eigener ioBroker-Adapter und kein zusätzlicher Dienst notwendig.
 1. Im ioBroker-Admin **Skripte** öffnen und ein neues JavaScript-Script erstellen.
 2. Den Inhalt von [ortsnetz-auslastung.js](ortsnetz-auslastung.js) einfügen.
 3. Im `CONFIG`-Block `latitude`, `longitude` und die drei Datenpunkt-IDs anpassen. Die IDs lassen sich im ioBroker-Admin unter **Objekte** kopieren.
-4. Falls keine Frequenz verfügbar ist, `frequencyState: ''` eintragen.
+4. Optional `frequencyState`, `plantCapacityKwp`, `pvForecastState` und `smartmeterModel` konfigurieren. Für nicht vorhandene Datenpunkte jeweils `''` eintragen.
 5. Script aktivieren. Es führt sofort einen ersten Upload aus und danach alle fünf Minuten.
 
 Koordinaten lassen sich mit [OpenStreetMap](https://www.openstreetmap.org/) bestimmen: Standort suchen, Rechtsklick auf die Karte und **„Abfrage starten“** wählen.
@@ -29,16 +29,20 @@ const CONFIG = {
     l1State: 'shelly.0.ShellyPro3EM#ABCDEF.emeter.0.voltage',
     l2State: 'shelly.0.ShellyPro3EM#ABCDEF.emeter.1.voltage',
     l3State: 'shelly.0.ShellyPro3EM#ABCDEF.emeter.2.voltage',
-    frequencyState: '',
+    frequencyState: 'shelly.0.ShellyPro3EM#ABCDEF.emeter.0.frequency',
+    plantCapacityKwp: 10.0,
+    pvForecastState: 'forecast.0.today_kwh',
+    smartmeterModel: 'Shelly Pro 3EM',
 };
 ```
 
-Die Datenpunktnamen variieren je Adapter und Gerät. Entscheidend sind Volt-Werte je Phase; Leistung, Energie, Geräte-ID und Zählernummer werden nicht übertragen.
+Die Datenpunktnamen variieren je Adapter und Gerät. `plantCapacityKwp` ist ein fester Wert in kWp, `pvForecastState` ein Datenpunkt in kWh. Geräte-ID und Zählernummer werden nicht übertragen.
 
 ## Verhalten und Fehleranalyse
 
 - Spannungswerte außerhalb von 150–300 V werden nicht übertragen.
 - Die Frequenz wird nur gesendet, wenn sie zwischen 45 und 55 Hz liegt.
+- Die PV-Anlagengröße wird nur zwischen 0 und 1000 kWp gesendet; die PV-Prognose nur zwischen 0 und 100000 kWh.
 - Übertragungen erhalten eine Zeitüberschreitung von 10 Sekunden und blockieren keinen folgenden Intervalllauf.
 - Warnungen stehen im ioBroker-Log unter `Ortsnetz-Auslastung`.
 - Bei `Datenpunkt nicht lesbar` die IDs im `CONFIG`-Block prüfen.
@@ -61,7 +65,10 @@ Beispiel-Payload:
   "l2_v": 229.9,
   "l3_v": 230.4,
   "grid_frequency_hz": 50,
-  "integration_version": "iobroker-0.1.0"
+  "plant_capacity_kwp": 10.0,
+  "pv_forecast_kwh": 24.5,
+  "smartmeter_model": "Shelly Pro 3EM",
+  "integration_version": "iobroker-0.2.0"
 }
 ```
 
