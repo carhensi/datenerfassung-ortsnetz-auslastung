@@ -232,4 +232,4 @@ Bei Fehlern endet das Script mit Exit-Code 1 und einer Meldung, die mit `FEHLER:
 - API-Beschreibung und weitere Integrationen: [datenerfassung-ortsnetz-auslastung](https://github.com/thomaslehmann1234/datenerfassung-ortsnetz-auslastung)
 - Volkszähler: [volkszaehler.org](https://volkszaehler.org)
 
-Erstellt mit Claude.ai
+Erstellt mit https://Claude.ai.
