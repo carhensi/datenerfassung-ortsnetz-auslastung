@@ -129,6 +129,8 @@ Zahlen werden mit Punkt als Dezimaltrennzeichen und ohne Anführungszeichen eing
 
 ## PV-Tagesprognose
 
+Im Projekt [zeroinput/dirt_shift](https://github.com/E-t0m/zeroinput/tree/main/dirt_shift) kann diese Prognose und Datei **automatisch** erzeugt werden.
+
 Liegt im Script-Verzeichnis eine Datei `pv_tagesprognose.json`, wird ihr Wert als `pv_forecast_kwh` übertragen:
 
 ```json
@@ -229,3 +231,5 @@ Bei Fehlern endet das Script mit Exit-Code 1 und einer Meldung, die mit `FEHLER:
 
 - API-Beschreibung und weitere Integrationen: [datenerfassung-ortsnetz-auslastung](https://github.com/thomaslehmann1234/datenerfassung-ortsnetz-auslastung)
 - Volkszähler: [volkszaehler.org](https://volkszaehler.org)
+
+Erstellt mit Claude.ai
