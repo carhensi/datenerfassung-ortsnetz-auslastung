@@ -9,6 +9,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 - [Home Assistant](#home-assistant)
 - [ioBroker](#iobroker)
 - [MQTT](#mqtt)
+- [Victron GX](#victron-gx)
 - [KOSTAL KSEM](#kostal-ksem)
 - [openHAB](#openhab)
 - [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
@@ -23,6 +24,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 | [Home Assistant](#home-assistant) | Vorhandene Spannungssensoren | Home Assistant / HACS | HTTPS | Home-Assistant-Installationen |
 | [ioBroker](#iobroker) | Vorhandene Spannungsdatenpunkte | ioBroker JavaScript | HTTPS | ioBroker-Installationen |
 | [MQTT](#mqtt) | MQTT-Topics | Node.js / Docker | HTTPS | Smart-Meter-Gateways mit MQTT und EVCC |
+| [Victron GX](#victron-gx) | VE.Bus oder Netzzähler über D-Bus | Python / Venus OS | HTTPS | Victron GX-Geräte |
 | [KOSTAL KSEM](#kostal-ksem) | KOSTAL Smart Energy Meter | Node-RED / Modbus | HTTPS | KSEM mit Node-RED |
 | [openHAB](#openhab) | Vorhandene Smart-Meter-Items | openHAB JavaScript-Regel | HTTPS | openHAB-Installationen |
 
@@ -70,6 +72,16 @@ Ein eigenständiges Node.js-Script abonniert drei Spannungs-Topics und optional 
 - Voraussetzung: Node.js ab Version 24 oder Docker, erreichbarer MQTT-Broker und Internetzugang
 
 Die Konfiguration erfolgt im `CONFIG`-Block des Scripts. Unterstützt werden numerische Payloads sowie JSON-Payloads mit konfigurierbarem Schlüssel. Details stehen in der [MQTT-README](mqtt-ortsnetz-auslastung/README.md).
+
+## Victron GX
+
+Das Python-Script läuft direkt auf Venus OS und liest Netzspannungen über den lokalen D-Bus. Es bevorzugt den Victron-Netzzähler und verwendet andernfalls VE.Bus.
+
+- Ordner: [`victron-gx-ortsnetz-auslastung`](victron-gx-ortsnetz-auslastung)
+- Script: [`ortsnetz-victron-gx.py`](victron-gx-ortsnetz-auslastung/ortsnetz-victron-gx.py)
+- Voraussetzungen: Victron GX mit Venus OS, VE.Bus-Gerät oder Netzzähler, SSH-Zugang und Internetzugang
+
+Installation, Konfiguration und Autostart stehen in der [Victron-GX-README](victron-gx-ortsnetz-auslastung/README.md).
 
 ## KOSTAL KSEM
 
