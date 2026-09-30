@@ -28,6 +28,7 @@ import dbus
 LATITUDE = 52.520008
 LONGITUDE = 13.404954
 PLANT_KWP = 10.0            # optional, z. B. 9.8
+PV_FORECAST_KWH = None      # optional, z. B. 24.5
 SMARTMETER_MODEL = "Victron GX"
 INTERVAL_S = 300            # alle 5 Minuten
 # -----------------------------------------------
@@ -62,6 +63,10 @@ def find_service(prefix):
 
 def valid_v(v):
     return round(v, 1) if v is not None and 150 <= v <= 300 else -1
+
+
+def valid_forecast(v):
+    return round(v, 2) if isinstance(v, (int, float)) and 0 <= v <= 100000 else None
 
 
 def read_values():
@@ -103,6 +108,9 @@ def send_once():
         payload["grid_frequency_hz"] = round(freq, 2)
     if PLANT_KWP:
         payload["plant_capacity_kwp"] = PLANT_KWP
+    forecast = valid_forecast(PV_FORECAST_KWH)
+    if forecast is not None:
+        payload["pv_forecast_kwh"] = forecast
 
     req = urllib.request.Request(
         API_URL,

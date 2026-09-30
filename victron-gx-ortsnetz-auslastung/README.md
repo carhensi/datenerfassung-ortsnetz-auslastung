@@ -31,7 +31,7 @@ Ungültige oder nicht vorhandene L2/L3-Phasen werden mit `-1` übertragen. Das i
 
    Das Script nach `/data/ortsnetz/ortsnetz-victron-gx.py` kopieren.
 
-3. Im Konfigurationsblock des Scripts mindestens `LATITUDE` und `LONGITUDE` anpassen. `PLANT_KWP` ist optional.
+3. Im Konfigurationsblock des Scripts mindestens `LATITUDE` und `LONGITUDE` anpassen. `PLANT_KWP` und `PV_FORECAST_KWH` sind optional.
 4. Einmalig testen:
 
    ```sh
@@ -59,6 +59,7 @@ Alle Dateien liegen unter `/data` und bleiben damit bei Venus-OS-Updates erhalte
 LATITUDE = 52.520008
 LONGITUDE = 13.404954
 PLANT_KWP = 10.0          # optional
+PV_FORECAST_KWH = None    # optional, z. B. 24.5
 SMARTMETER_MODEL = "Victron GX"
 INTERVAL_S = 300
 ```
