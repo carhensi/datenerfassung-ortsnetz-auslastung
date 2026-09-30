@@ -31,6 +31,8 @@ Die Namen im Regel-Script an die eigene Installation anpassen:
 | PV-Anlagengröße, optional | `Smartmeter_PV_KWP` |
 | PV-Prognose, optional | `Smartmeter_PV_Forecast` |
 
+Das optionale `SMARTMETER_MODEL` am Anfang von `ortsnetz-auslastung.js` kann Hersteller und Modell enthalten, zum Beispiel `"KOSTAL KSEM"`. Leer lassen, wenn keine Angabe gesendet werden soll.
+
 Für die Rückmeldung der API werden folgende String-Items erwartet:
 
 ```text
@@ -45,7 +47,7 @@ Ortsnetz_API_Status
 
 - Intervall: alle fünf Minuten
 - Standort: wird aus den openHAB-Regional Settings gelesen
-- Daten: L1/L2/L3, Frequenz sowie optional PV-Leistung und PV-Prognose
+- Daten: L1/L2/L3, Frequenz sowie optional PV-Leistung, PV-Prognose und Smartmeter-Modell
 - API-Antwort: aktualisiert die fünf Status-Items
 
 Prüfe die openHAB-Logs, falls keine Übertragung erfolgt. Ein fehlendes Smart-Meter-Item oder `NULL`/`UNDEF` verhindert den Upload.

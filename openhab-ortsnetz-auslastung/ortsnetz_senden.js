@@ -13,6 +13,7 @@ const hz = parseFloat(args[3]) || 50.0;
 // Optionale PV-Werte prüfen
 const rawKwp = args[4];
 const rawForecast = args[5];
+const rawSmartmeterModel = args[8];
 
 // Dynamische Koordinaten mit Fallback parsen
 const rawLat = parseFloat(args[6]) || 53.000000;
@@ -40,6 +41,9 @@ const dataObject = {
 // Optionale PV-Felder nur hinzufügen, wenn sie übergeben wurden
 if (rawForecast && rawForecast.trim() !== "" && !isNaN(rawForecast)) { dataObject.pv_forecast_kwh = parseFloat(rawForecast); }
 if (rawKwp && rawKwp.trim() !== "" && !isNaN(rawKwp)) { dataObject.plant_capacity_kwp = parseFloat(rawKwp); }
+if (typeof rawSmartmeterModel === "string" && rawSmartmeterModel.trim() !== "" && rawSmartmeterModel.trim().length <= 120) {
+  dataObject.smartmeter_model = rawSmartmeterModel.trim();
+}
 
 const payload = JSON.stringify(dataObject);
 

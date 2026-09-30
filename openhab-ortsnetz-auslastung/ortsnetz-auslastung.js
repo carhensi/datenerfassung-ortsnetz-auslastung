@@ -1,5 +1,8 @@
 const { rules, triggers, items } = require('openhab');
 
+// Optional: Hersteller und Modell des verwendeten Smart Meters.
+const SMARTMETER_MODEL = '';
+
 rules.JSRule({
     name: "Spannungsdaten alle 5 Minuten an Ortsnetz-Auslastung senden",
     description: "Sendet Smartmeter-Daten über das fehlerfreie Node-Hilfsskript an die API",
@@ -78,13 +81,13 @@ rules.JSRule({
             const InputStreamReader = java.io.InputStreamReader;
             const Collectors = java.util.stream.Collectors;
 
-            // Übergibt alle 8 Argumente (Pflicht + Optionale + Standort)
+            // Übergibt Pflichtwerte, optionale PV-Werte, Standort und Smartmeter-Modell.
             const pb = new ProcessBuilder([
                 "/usr/bin/node", 
                 "/srv/openhab-conf/misc/ortsnetz_senden.js", 
                 String(l1), String(l2), String(l3), String(hz), 
                 String(kwp), String(forecast),
-                String(latitude), String(longitude)
+                String(latitude), String(longitude), String(SMARTMETER_MODEL)
             ]);
             
             pb.redirectErrorStream(true);
