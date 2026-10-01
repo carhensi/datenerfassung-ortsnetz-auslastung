@@ -44,7 +44,7 @@ Der Endpoint ist öffentlich und benötigt keine Authentifizierung. Jede Messung
 
 | Status | Bedeutung |
 | --- | --- |
-| `202 Accepted` | Messung angenommen; die Antwort enthält `accepted`, `created` und eine Ampelbewertung je Phase und insgesamt. |
+| `202 Accepted` | Messung angenommen; die Antwort enthält `accepted`, `created`, eine Ampelbewertung je Phase und insgesamt sowie eine Speicherladeempfehlung. |
 | `422 Unprocessable Entity` | Pflichtfeld fehlt, hat ein ungültiges Format oder liegt außerhalb des erlaubten Wertebereichs. |
 | `403 Forbidden` | Der Standort ist für die Annahme gesperrt. |
 
@@ -59,6 +59,19 @@ Beispielantwort bei Annahme:
     "l2": "green",
     "l3": "green",
     "overall": "green"
-  }
+  },
+  "storage_recommendation": "none"
 }
 ```
+
+## Speicherladeempfehlung
+
+`storage_recommendation` ist eine direkt aus der übertragenen Messung abgeleitete Empfehlung. Es gibt keinen zusätzlichen API-Aufruf.
+
+| Wert | Bedeutung | Bedingung |
+| --- | --- | --- |
+| `discharge` | Speicher entladen | Mindestens eine gemessene Phase liegt unter ihrer unteren Warnschwelle. |
+| `charge` | Speicher laden | Keine Phase liegt unter der unteren Warnschwelle und mindestens eine gemessene Phase liegt über ihrer oberen Warnschwelle. |
+| `none` | Keine Aktion | Alle gemessenen Phasen liegen innerhalb der Warnschwellen. |
+
+Nicht verfügbare Phasen mit dem Wert `-1` werden ignoriert. Liegen gleichzeitig Unter- und Überspannungen vor, hat `discharge` Vorrang. Die Schwellenwerte entsprechen immer der auf dem Server konfigurierten Spannungsskala.
