@@ -31,27 +31,43 @@ Ungültige oder nicht vorhandene L2/L3-Phasen werden mit `-1` übertragen. Das i
 
    Das Script nach `/data/ortsnetz/ortsnetz-victron-gx.py` kopieren.
 
-3. Im Konfigurationsblock des Scripts mindestens `LATITUDE` und `LONGITUDE` anpassen. `PLANT_KWP` und `PV_FORECAST_KWH` sind optional.
-4. Einmalig testen:
+3. Script ausführbar machen:
+
+   ```sh
+   chmod +x /data/ortsnetz/ortsnetz-victron-gx.py
+   ```
+
+4. Im Konfigurationsblock des Scripts mindestens `LATITUDE` und `LONGITUDE` anpassen. `PLANT_KWP` und `PV_FORECAST_KWH` sind optional.
+5. Einmalig testen:
 
    ```sh
    python3 /data/ortsnetz/ortsnetz-victron-gx.py --once
    ```
 
-5. Autostart in `/data/rc.local` ergänzen:
+6. Autostart in `/data/rc.local` ergänzen:
 
    ```sh
    #!/bin/sh
    nohup python3 /data/ortsnetz/ortsnetz-victron-gx.py >> /data/ortsnetz/ortsnetz-victron-gx.log 2>&1 &
    ```
 
-6. Datei ausführbar machen und GX neu starten:
+7. Datei ausführbar machen und GX neu starten:
 
    ```sh
    chmod +x /data/rc.local
    ```
 
 Alle Dateien liegen unter `/data` und bleiben damit bei Venus-OS-Updates erhalten.
+
+## SD-Karte schonen
+
+Für den Dauerbetrieb ist ein Logfile unter `/data` meist nicht nötig und erzeugt regelmäßige Schreibzugriffe auf die SD-Karte. Den Prozess daher vorzugsweise ohne Log starten:
+
+```sh
+nohup python3 /data/ortsnetz/ortsnetz-victron-gx.py > /dev/null 2>&1 &
+```
+
+`/tmp` vermeidet zwar SD-Karten-Zugriffe, liegt aber im RAM und kann sich bei dauerhaftem Logging füllen. Daher nur für kurze Fehlersuchen verwenden.
 
 ## Konfiguration
 
