@@ -10,6 +10,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 - [ioBroker](#iobroker)
 - [MQTT](#mqtt)
 - [Victron GX](#victron-gx)
+- [Volkszähler](#volkszaehler)
 - [KOSTAL KSEM](#kostal-ksem)
 - [openHAB](#openhab)
 - [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
@@ -25,6 +26,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 | [ioBroker](#iobroker) | Vorhandene Spannungsdatenpunkte | ioBroker JavaScript | HTTPS | ioBroker-Installationen |
 | [MQTT](#mqtt) | MQTT-Topics | Node.js / Docker | HTTPS | Smart-Meter-Gateways mit MQTT und EVCC |
 | [Victron GX](#victron-gx) | VE.Bus oder Netzzähler über D-Bus | Python / Venus OS | HTTPS | Victron GX-Geräte |
+| [Volkszähler](#volkszaehler) | Volkszähler-Middleware | Python / cron | HTTPS | Smart Meter mit Volkszähler |
 | [KOSTAL KSEM](#kostal-ksem) | KOSTAL Smart Energy Meter | Node-RED / Modbus | HTTPS | KSEM mit Node-RED |
 | [openHAB](#openhab) | Vorhandene Smart-Meter-Items | openHAB JavaScript-Regel | HTTPS | openHAB-Installationen |
 
@@ -82,6 +84,16 @@ Das Python-Script läuft direkt auf Venus OS und liest Netzspannungen über den 
 - Voraussetzungen: Victron GX mit Venus OS, VE.Bus-Gerät oder Netzzähler, SSH-Zugang und Internetzugang
 
 Installation, Konfiguration und Autostart stehen in der [Victron-GX-README](victron-gx-ortsnetz-auslastung/README.md).
+
+## Volkszähler
+
+Das Python-Script liest die Phasenspannungen aus der lokalen Volkszähler-Middleware und wird alle fünf Minuten per cron ausgeführt. Optional werden Netzfrequenz, installierte PV-Leistung, PV-Tagesprognose und das Zählermodell übertragen.
+
+- Ordner: [`volkszaehler-ortsnetz-auslastung`](volkszaehler-ortsnetz-auslastung)
+- Script: [`ortsnetz_auslastung.py`](volkszaehler-ortsnetz-auslastung/ortsnetz_auslastung.py)
+- Voraussetzungen: Linux mit Python ab 3.8, cron, lokale Volkszähler-Middleware und ein Smart Meter mit Spannungswerten
+
+Installation und die Zuordnung der Volkszähler-Kanäle stehen in der [Volkszähler-README](volkszaehler-ortsnetz-auslastung/readme.md).
 
 ## KOSTAL KSEM
 
