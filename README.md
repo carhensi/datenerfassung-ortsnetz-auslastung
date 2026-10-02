@@ -13,6 +13,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 - [Volkszähler](#volkszähler)
 - [KOSTAL KSEM](#kostal-ksem)
 - [openHAB](#openhab)
+- [Fronius](#fronius)
 - [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
 - [API](#api)
 - [Koordinaten](#koordinaten)
@@ -30,6 +31,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 | [Volkszähler](#volkszähler) | Volkszähler-Middleware | Python / cron | HTTPS | Smart Meter mit Volkszähler |
 | [KOSTAL KSEM](#kostal-ksem) | KOSTAL Smart Energy Meter | Node-RED / Modbus | HTTPS | KSEM mit Node-RED |
 | [openHAB](#openhab) | Vorhandene Smart-Meter-Items | openHAB JavaScript-Regel | HTTPS | openHAB-Installationen |
+| [Fronius](#fronius) | Fronius Smart Meter über die Solar API | Python / cron | HTTPS | Fronius-Wechselrichter mit Smart Meter |
 
 ## Shelly Pro 3EM und Pro EM50
 
@@ -120,6 +122,16 @@ Die openHAB-Integration besteht aus einer JavaScript-Regel und einem Node.js-HTT
 - Anleitung: [openHAB-README](openhab-ortsnetz-auslastung/readme.md)
 
 Vor der Aktivierung Item-IDs sowie Node.js- und Helferpfade anpassen.
+
+## Fronius
+
+Das Python-Script liest die Phasenspannungen und die Netzfrequenz des Fronius Smart Meters am Netzeinspeisepunkt über die lokale Solar API des Wechselrichters und wird alle fünf Minuten per cron ausgeführt. Das Zählermodell wird aus der Solar API übernommen, optional wird die installierte PV-Leistung übertragen.
+
+- Ordner: [`fronius-ortsnetz-auslastung`](fronius-ortsnetz-auslastung)
+- Script: [`ortsnetz_fronius.py`](fronius-ortsnetz-auslastung/ortsnetz_fronius.py)
+- Voraussetzungen: Fronius-Wechselrichter mit Fronius Smart Meter am Netzeinspeisepunkt, aktivierte Solar API, Linux mit Python ab 3.8, cron und Internetzugang
+
+Aktivierung der Solar API, Konfiguration und cron-Eintrag stehen in der [Fronius-README](fronius-ortsnetz-auslastung/README.md).
 
 ## Gemeinsame Eigenschaften
 
