@@ -10,11 +10,12 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 - [ioBroker](#iobroker)
 - [MQTT](#mqtt)
 - [Victron GX](#victron-gx)
-- [Volkszähler](#volkszaehler)
+- [Volkszähler](#volkszähler)
 - [KOSTAL KSEM](#kostal-ksem)
 - [openHAB](#openhab)
 - [Gemeinsame Eigenschaften](#gemeinsame-eigenschaften)
 - [API](#api)
+- [Koordinaten](#koordinaten)
 
 ## Integrationen
 
@@ -26,7 +27,7 @@ Dieses Repository bündelt Integrationen, die lokale Netzspannungsmessungen an d
 | [ioBroker](#iobroker) | Vorhandene Spannungsdatenpunkte | ioBroker JavaScript | HTTPS | ioBroker-Installationen |
 | [MQTT](#mqtt) | MQTT-Topics | Node.js / Docker | HTTPS | Smart-Meter-Gateways mit MQTT und EVCC |
 | [Victron GX](#victron-gx) | VE.Bus oder Netzzähler über D-Bus | Python / Venus OS | HTTPS | Victron GX-Geräte |
-| [Volkszähler](#volkszaehler) | Volkszähler-Middleware | Python / cron | HTTPS | Smart Meter mit Volkszähler |
+| [Volkszähler](#volkszähler) | Volkszähler-Middleware | Python / cron | HTTPS | Smart Meter mit Volkszähler |
 | [KOSTAL KSEM](#kostal-ksem) | KOSTAL Smart Energy Meter | Node-RED / Modbus | HTTPS | KSEM mit Node-RED |
 | [openHAB](#openhab) | Vorhandene Smart-Meter-Items | openHAB JavaScript-Regel | HTTPS | openHAB-Installationen |
 
@@ -37,6 +38,7 @@ Skripte für Shelly Pro 3EM, Pro 3EM-400 und Pro EM50. Sie senden sofort nach de
 - Ordner: [`shelly-ortsnetz-auslastung`](shelly-ortsnetz-auslastung)
 - Voraussetzungen: unterstütztes Shelly-Gerät, Shelly Scripting, NTP und Internetzugang
 - Skripte: [`pro-3EM-ortsnetz-auslastung.js`](shelly-ortsnetz-auslastung/pro-3EM-ortsnetz-auslastung.js) und [`pro-EM50-ortsnetz-auslastung.js`](shelly-ortsnetz-auslastung/pro-EM50-ortsnetz-auslastung.js)
+- Anleitung: [Shelly-README](shelly-ortsnetz-auslastung/README.md)
 
 Vor dem Aktivieren Breitengrad und Längengrad konfigurieren.
 
@@ -46,6 +48,7 @@ Ein ESP32 mit optischem Lesekopf dekodiert SML-Telegramme des Stromzählers und 
 
 - Ordner: [`tasmota-ortsnetz-auslastung`](tasmota-ortsnetz-auslastung)
 - Voraussetzungen: ESP32 für HTTPS, Tasmota mit `USE_SCRIPT` und `USE_SML_M` sowie eine freigeschaltete Info-Schnittstelle des Zählers
+- Anleitung: [Tasmota-README](tasmota-ortsnetz-auslastung/README.md)
 
 GPIO, Baudrate und OBIS-Codes hängen vom Zählermodell ab.
 
@@ -62,6 +65,7 @@ Das Script für den JavaScript-Adapter liest drei konfigurierte Spannungsdatenpu
 
 - Ordner: [`iobroker-ortsnetz-auslastung`](iobroker-ortsnetz-auslastung)
 - Voraussetzung: `ioBroker.javascript` ab Version 7.9
+- Anleitung: [ioBroker-README](iobroker-ortsnetz-auslastung/README.md)
 
 Das Script verwendet den eingebauten Helfer `httpPost` und benötigt keine zusätzliche npm-Abhängigkeit.
 
@@ -69,7 +73,7 @@ Das Script verwendet den eingebauten Helfer `httpPost` und benötigt keine zusä
 
 Ein eigenständiges Node.js-Script abonniert drei Spannungs-Topics und optional ein Frequenz-Topic auf einem MQTT-Broker. Es unterstützt außerdem eine PV-Tagesprognose, zum Beispiel von evcc, und überträgt die Messwerte nach einem ersten Upload alle fünf Minuten per HTTPS.
 
-- Ordner: lokal `mqtt-ortsnetz-auslastung`
+- Ordner: [`mqtt-ortsnetz-auslastung`](mqtt-ortsnetz-auslastung)
 - Messquelle: Smart-Meter-Gateways oder andere Systeme mit MQTT-Topics für L1/L2/L3
 - Voraussetzung: Node.js ab Version 24 oder Docker, erreichbarer MQTT-Broker und Internetzugang
 
@@ -113,6 +117,7 @@ Die openHAB-Integration besteht aus einer JavaScript-Regel und einem Node.js-HTT
 - Regel: [`ortsnetz-auslastung.js`](openhab-ortsnetz-auslastung/ortsnetz-auslastung.js)
 - Helfer: [`ortsnetz_senden.js`](openhab-ortsnetz-auslastung/ortsnetz_senden.js)
 - Voraussetzungen: openHAB JavaScript Scripting sowie Node.js unter dem konfigurierten Helferpfad
+- Anleitung: [openHAB-README](openhab-ortsnetz-auslastung/readme.md)
 
 Vor der Aktivierung Item-IDs sowie Node.js- und Helferpfade anpassen.
 
@@ -120,7 +125,7 @@ Vor der Aktivierung Item-IDs sowie Node.js- und Helferpfade anpassen.
 
 - Übertragungsintervall: integrationsabhängig, die meisten Skripte verwenden fünf Minuten
 - Pflichtfelder: Zeitstempel, Standort und Spannungswerte; einphasige Messungen verwenden für nicht vorhandene L2/L3-Phasen `-1`
-- Optionale Felder: Netzfrequenz, PV-Leistung und PV-Prognose
+- Optionale Felder: Netzfrequenz, PV-Leistung, PV-Prognose, Zählermodell und Kennung der Integration
 - Keine Übertragung von Zählernummern, Gerätekennungen, Energiezählern oder IP-Adressen
 
 ## API
