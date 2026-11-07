@@ -8,6 +8,7 @@ import json
 import socket
 import struct
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -41,7 +42,9 @@ class SmaBasis(unittest.TestCase):
         self.stack.enter_context(patch.multiple(
             sma, LATITUDE=52.5, LONGITUDE=13.4, METER_SERIAL=None,
             INTERVAL_S=300, INTERFACE_IP="0.0.0.0", PLANT_CAPACITY_KWP=None,
-            FREQUENCY_URL=None, FREQUENCY_KEY=None))
+            FREQUENCY_URL=None, FREQUENCY_KEY=None, PV_FORECAST_HA_URL=None,
+            PV_FORECAST_HA_TOKEN=None, PV_FORECAST_HA_ENTITY=None,
+            PV_FORECAST_MAX_AGE_S=21600))
         self.ausgabe = io.StringIO()
         self.stack.enter_context(contextlib.redirect_stdout(self.ausgabe))
         self.stack.enter_context(contextlib.redirect_stderr(io.StringIO()))
@@ -511,3 +514,72 @@ class StatistikTest(SmaBasis):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+HA_URL = "http://192.0.2.20:8123"
+
+
+def ha_zustand(state, einheit="kWh", alter_s=60):
+    zeit = datetime.now(timezone.utc) - timedelta(seconds=alter_s)
+    return json.dumps({"state": state, "attributes": {"unit_of_measurement": einheit},
+                       "last_updated": zeit.isoformat()}).encode()
+
+
+class PvPrognoseTest(SmaBasis):
+    def setUp(self):
+        super().setUp()
+        sma.PLANT_CAPACITY_KWP = 9.8
+        sma.PV_FORECAST_HA_URL = HA_URL
+        sma.PV_FORECAST_HA_TOKEN = "geheim"
+        sma.PV_FORECAST_HA_ENTITY = "sensor.pv_heute"
+        self.http.side_effect = None
+
+    def prognose(self, *antworten):
+        self.http.side_effect = [http_antwort(a) for a in antworten]
+        return sma.payload_erstellen({32: 230000}).get("pv_forecast_kwh")
+
+    def test_prognose_im_payload_mit_token(self):
+        self.assertEqual(self.prognose(ha_zustand("41.5418")), 41.5)
+        anfrage = self.http.call_args.args[0]
+        self.assertEqual(anfrage.full_url, HA_URL + "/api/states/sensor.pv_heute")
+        self.assertEqual(anfrage.get_header("Authorization"), "Bearer geheim")
+
+    def test_summe_mehrerer_sensoren_und_einheiten(self):
+        sma.PV_FORECAST_HA_ENTITY = "sensor.ost, sensor.west"
+        self.assertEqual(self.prognose(ha_zustand("16.9588"), ha_zustand("24583", "Wh")), 41.5)
+
+    def test_ungueltige_sensoren_werden_uebersprungen(self):
+        sma.PV_FORECAST_HA_ENTITY = "sensor.a,sensor.b,sensor.c,sensor.d"
+        self.assertEqual(self.prognose(
+            ha_zustand("unavailable"), ha_zustand("5", "W"),
+            ha_zustand("7", alter_s=30000), ha_zustand("3.0")), 3.0)
+        sma.PV_FORECAST_HA_ENTITY = "sensor.a"
+        self.assertIsNone(self.prognose(ha_zustand("unavailable")))
+        self.assertIn("keine Zahl", self.ausgabe.getvalue())
+
+    def test_fehler_der_quelle_verhindert_upload_nicht(self):
+        self.http.side_effect = OSError("verbindung")
+        payload = sma.payload_erstellen({32: 230000})
+        self.assertNotIn("pv_forecast_kwh", payload)
+        self.assertEqual(payload["l1_v"], 230.0)
+
+    def test_grenze_10_kwh_je_kwp(self):
+        self.assertIsNone(self.prognose(ha_zustand("98.1")))
+        self.assertEqual(self.prognose(ha_zustand("98.0")), 98.0)
+        self.assertIsNone(self.prognose(ha_zustand("-1")))
+
+    def test_ohne_altersgrenze(self):
+        sma.PV_FORECAST_MAX_AGE_S = 0
+        self.assertEqual(self.prognose(ha_zustand("5", alter_s=99999)), 5.0)
+
+    def test_konfiguration(self):
+        sma.konfiguration_pruefen()
+        for felder in ({"PV_FORECAST_HA_TOKEN": None}, {"PV_FORECAST_HA_URL": "ftp://x"},
+                       {"PV_FORECAST_HA_ENTITY": "pv_heute"}, {"PLANT_CAPACITY_KWP": None},
+                       {"PV_FORECAST_MAX_AGE_S": -1}):
+            with patch.multiple(sma, **felder), self.subTest(felder=felder):
+                with self.assertRaisesRegex(ValueError, "PV_FORECAST|PLANT_CAPACITY"):
+                    sma.konfiguration_pruefen()
+        with patch.multiple(sma, PV_FORECAST_HA_URL=None, PV_FORECAST_HA_TOKEN=None,
+                            PV_FORECAST_HA_ENTITY=None):
+            sma.konfiguration_pruefen()

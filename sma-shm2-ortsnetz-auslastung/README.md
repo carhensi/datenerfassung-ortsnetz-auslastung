@@ -65,6 +65,10 @@ INTERVAL_S = 300
 PLANT_CAPACITY_KWP = None   # optional: installierte PV-Leistung in kWp, z. B. 9.8
 FREQUENCY_URL = None        # optional: externe Frequenzquelle (JSON über http/https)
 FREQUENCY_KEY = None        # Schlüssel des Frequenzwerts in Hz, z. B. "Fac"
+PV_FORECAST_HA_URL = None   # optional: PV-Tagesprognose aus Home Assistant, siehe unten
+PV_FORECAST_HA_TOKEN = None
+PV_FORECAST_HA_ENTITY = None
+PV_FORECAST_MAX_AGE_S = 21600
 ```
 
 Die Standardwerte der `konfig(...)`-Aufrufe im Script anpassen oder per Umgebungsvariable mit Präfix `ORTSNETZ_` überschreiben, z. B. `ORTSNETZ_LATITUDE=52.520008`; nichtleere Umgebungsvariablen haben Vorrang, die `.env`-Datei lädt nur Docker Compose. Alle Werte werden beim Start validiert.
@@ -82,6 +86,23 @@ ORTSNETZ_FREQUENCY_KEY=Fac
 - Eine gültige Frequenz aus dem Zähler-Telegramm hat Vorrang; die externe Quelle wird dann nicht abgefragt.
 - Ist die Quelle nicht erreichbar, der Schlüssel nicht vorhanden oder der Wert außerhalb von 45 bis 55 Hz, wird die Messung ohne Frequenz gesendet und der Grund im Log vermerkt.
 - Die Quelle muss den aktuellen Messwert liefern; einen Zeitstempel prüft das Script nicht. Listen im JSON und Quellen mit Anmeldung werden nicht unterstützt. Ob ein Gerät die Frequenz liefert, zeigt `--dry-run`.
+
+### PV-Tagesprognose aus Home Assistant
+
+Die API nimmt optional die heutige PV-Prognose in kWh entgegen (`pv_forecast_kwh`). Liegt sie in Home Assistant vor, etwa aus der Solcast- oder Forecast.Solar-Integration, liest das Script sie bei jeder Messung per REST-API:
+
+```sh
+ORTSNETZ_PLANT_CAPACITY_KWP=9.8                 # Pflicht für die Prognose
+ORTSNETZ_PV_FORECAST_HA_URL=http://192.168.178.20:8123
+ORTSNETZ_PV_FORECAST_HA_TOKEN=eyJ...            # Long-lived Token: HA-Profil → Sicherheit
+ORTSNETZ_PV_FORECAST_HA_ENTITY=sensor.solcast_pv_forecast_prognose_heute
+```
+
+- Mehrere Sensoren (z. B. je Dachfläche) mit Komma trennen; gesendet wird die Summe.
+- Der Sensor muss `unit_of_measurement` Wh, kWh oder MWh melden; Leistungssensoren (W) werden übersprungen.
+- Sensorwerte älter als `PV_FORECAST_MAX_AGE_S` (Standard 6 h, passend zum Solcast-Abrufintervall) entfallen; `0` schaltet die Prüfung ab.
+- Die API verwirft eine Prognose ohne Anlagengröße oder über 10 kWh je kWp mit HTTP 422; das Script sendet die Messung dann ohne Prognose und vermerkt den Grund im Log.
+- Fehler beim Abruf verhindern den Upload der Spannungen nie.
 
 ## Docker
 

@@ -56,7 +56,7 @@ INTERFACE_IP = konfig("INTERFACE_IP", "0.0.0.0", str)
 
 # Seriennummer des Zählers (None = erstes gültiges Gerät je Messung). Nötig, wenn
 # mehrere EMETER-Geräte im Netz senden; steht auf dem Typenschild und im Log.
-METER_SERIAL = konfig("METER_SERIAL", None, int)    # z. B. 3011478221
+METER_SERIAL = konfig("METER_SERIAL", None, int)    # z. B. 3002345678
 
 INTERVAL_S = konfig("INTERVAL_S", 300, int)     # alle 5 Minuten
 
@@ -69,6 +69,15 @@ PLANT_CAPACITY_KWP = konfig("PLANT_CAPACITY_KWP", None)   # z. B. 9.8
 # Beispiel sonnenBatterie: "http://192.168.178.50/api/v2/status" und "Fac".
 FREQUENCY_URL = konfig("FREQUENCY_URL", None, str)
 FREQUENCY_KEY = konfig("FREQUENCY_KEY", None, str)
+
+# Optional: heutige PV-Tagesprognose in kWh aus Home Assistant (API-Feld
+# pv_forecast_kwh), z. B. von Solcast oder Forecast.Solar. Mehrere Sensoren
+# (je Dachfläche) mit Komma getrennt, gesendet wird die Summe. Setzt
+# PLANT_CAPACITY_KWP voraus: die API verwirft Prognosen ohne Anlagengröße.
+PV_FORECAST_HA_URL = konfig("PV_FORECAST_HA_URL", None, str)        # z. B. http://192.168.178.20:8123
+PV_FORECAST_HA_TOKEN = konfig("PV_FORECAST_HA_TOKEN", None, str)    # Long-lived Token aus dem HA-Profil
+PV_FORECAST_HA_ENTITY = konfig("PV_FORECAST_HA_ENTITY", None, str)  # z. B. sensor.solcast_pv_forecast_prognose_heute
+PV_FORECAST_MAX_AGE_S = konfig("PV_FORECAST_MAX_AGE_S", 21600, int) # ältere Sensorwerte entfallen; 0 = keine Prüfung
 # -----------------------------------------------
 
 API_URL = "https://www.ortsnetz-auslastung.de/v1/measurements"
@@ -80,6 +89,10 @@ EMETER_PROTOCOL_ID = 0x6069
 TELEGRAM_TIMEOUT_S = 15     # maximale Wartezeit auf ein gültiges Telegramm
 FREQUENZ_TIMEOUT_S = 5      # maximale Wartezeit auf die externe Frequenzquelle
 FREQUENZ_MAX_BYTES = 65536  # größere Antworten der Quelle werden verworfen
+PROGNOSE_TIMEOUT_S = 5      # maximale Wartezeit auf Home Assistant
+PROGNOSE_EINHEITEN = {"Wh": 0.001, "kWh": 1.0, "MWh": 1000.0}  # Faktor nach kWh
+PROGNOSE_MAX_KWH = 100000   # Wertebereich der API für pv_forecast_kwh
+PROGNOSE_KWH_JE_KWP = 10    # darüber verwirft die API die ganze Messung (HTTP 422)
 MAX_ZAEHLER = 16            # Seriennummern je Intervall in der Statistik
 
 # OBIS-Messwert-Indizes im EMETER-Telegramm (Momentanwerte, Typ 4)
@@ -108,6 +121,32 @@ def konfiguration_pruefen():
     except OSError:
         raise ValueError("INTERFACE_IP muss eine lokale IPv4-Adresse sein.") from None
     frequenzquelle_pruefen()
+    prognosequelle_pruefen()
+
+
+def prognosequelle_pruefen():
+    if PV_FORECAST_MAX_AGE_S < 0:
+        raise ValueError("PV_FORECAST_MAX_AGE_S darf nicht negativ sein.")
+    gesetzt = [w for w in (PV_FORECAST_HA_URL, PV_FORECAST_HA_TOKEN, PV_FORECAST_HA_ENTITY)
+               if w is not None]
+    if not gesetzt:
+        return
+    if len(gesetzt) < 3:
+        raise ValueError("PV_FORECAST_HA_URL, PV_FORECAST_HA_TOKEN und PV_FORECAST_HA_ENTITY "
+                         "müssen zusammen gesetzt sein.")
+    adresse = urllib.parse.urlsplit(PV_FORECAST_HA_URL)
+    unzulaessig = any(z.isspace() or not z.isprintable() for z in PV_FORECAST_HA_URL)
+    if adresse.scheme not in ("http", "https") or not adresse.netloc or unzulaessig:
+        raise ValueError("PV_FORECAST_HA_URL muss eine http- oder https-Adresse sein.")
+    if any("." not in e or " " in e for e in prognose_sensoren()):
+        raise ValueError("PV_FORECAST_HA_ENTITY muss Sensor-IDs wie sensor.pv_prognose enthalten.")
+    if PLANT_CAPACITY_KWP is None:
+        raise ValueError("PV_FORECAST_HA_ENTITY braucht PLANT_CAPACITY_KWP: die API nimmt "
+                         "eine Prognose nur mit Anlagengröße an.")
+
+
+def prognose_sensoren():
+    return [e.strip() for e in PV_FORECAST_HA_ENTITY.split(",") if e.strip()]
 
 
 def frequenzquelle_pruefen():
@@ -215,6 +254,11 @@ def payload_erstellen(werte):
         frequenz = externe_frequenz()
     if frequenz is not None:
         payload["grid_frequency_hz"] = round(frequenz, 2)
+
+    if PV_FORECAST_HA_ENTITY is not None:
+        prognose = pv_prognose()
+        if prognose is not None:
+            payload["pv_forecast_kwh"] = prognose
 
     return payload
 
@@ -331,6 +375,79 @@ def externe_frequenz():
     return frequenz
 
 
+def ha_sensor(entity):
+    """Zustand eines Home-Assistant-Sensors als dict; None bei jedem Fehler."""
+    anfrage = urllib.request.Request(
+        PV_FORECAST_HA_URL.rstrip("/") + "/api/states/" + entity,
+        headers={"Authorization": "Bearer " + PV_FORECAST_HA_TOKEN},
+    )
+    try:
+        with urllib.request.urlopen(anfrage, timeout=PROGNOSE_TIMEOUT_S) as antwort:
+            roh = antwort.read(FREQUENZ_MAX_BYTES + 1)
+        if len(roh) > FREQUENZ_MAX_BYTES:
+            raise ValueError(f"Antwort größer als {FREQUENZ_MAX_BYTES} Bytes")
+        daten = json.loads(roh)
+        if not isinstance(daten, dict):
+            raise ValueError("Antwort ist kein Sensorobjekt")
+        return daten
+    except (OSError, ValueError, RecursionError, http.client.HTTPException) as fehler:
+        log(f"Prognose: Sensor {entity} aus Home Assistant nicht lesbar: {fehler!r}")
+        return None
+
+
+def sensor_kwh(entity, daten):
+    """Wert eines Prognosesensors in kWh; None, wenn keine Zahl, Einheit oder zu alt."""
+    try:
+        wert = float(daten.get("state"))
+    except (TypeError, ValueError):
+        log(f"Prognose: Sensor {entity} meldet {daten.get('state')!r}, keine Zahl.")
+        return None
+    attribute = daten.get("attributes")
+    einheit = attribute.get("unit_of_measurement") if isinstance(attribute, dict) else None
+    faktor = PROGNOSE_EINHEITEN.get(str(einheit).strip()) if einheit is not None else None
+    if faktor is None:
+        log(f"Prognose: Sensor {entity} hat Einheit {einheit!r}, erwartet Wh/kWh/MWh.")
+        return None
+    if PV_FORECAST_MAX_AGE_S > 0:
+        zeit = daten.get("last_reported") or daten.get("last_updated")
+        try:
+            zeitpunkt = datetime.fromisoformat(str(zeit).replace("Z", "+00:00"))
+            if zeitpunkt.tzinfo is None:
+                zeitpunkt = zeitpunkt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            log(f"Prognose: Sensor {entity} nennt keine Zeit, Alter nicht prüfbar.")
+            return None
+        alter = (datetime.now(timezone.utc) - zeitpunkt).total_seconds()
+        if alter > PV_FORECAST_MAX_AGE_S:
+            log(f"Prognose: Sensor {entity} ist {alter:.0f} s alt (max. {PV_FORECAST_MAX_AGE_S} s).")
+            return None
+    return wert * faktor
+
+
+def pv_prognose():
+    """Summe der Prognosesensoren in kWh für pv_forecast_kwh; None, wenn nichts Gültiges.
+
+    Fehler dürfen den Upload der Spannungen nie verhindern. Ein Sensor, der
+    `unavailable` meldet oder veraltet ist, wird übersprungen; die Messung geht
+    dann ohne oder mit der Summe der übrigen Sensoren raus.
+    """
+    summe = None
+    for entity in prognose_sensoren():
+        daten = ha_sensor(entity)
+        kwh = sensor_kwh(entity, daten) if daten is not None else None
+        if kwh is not None:
+            summe = kwh if summe is None else summe + kwh
+    if summe is None:
+        return None
+    summe = round(summe, 1)
+    grenze = PROGNOSE_KWH_JE_KWP * PLANT_CAPACITY_KWP
+    if not 0 <= summe <= min(PROGNOSE_MAX_KWH, grenze):
+        log(f"Prognose {summe} kWh außerhalb von 0 bis {min(PROGNOSE_MAX_KWH, grenze):g} kWh "
+            f"({PROGNOSE_KWH_JE_KWP} kWh je kWp), Messung ohne Prognose.")
+        return None
+    return summe
+
+
 def senden(payload):
     anfrage = urllib.request.Request(
         API_URL,
@@ -345,7 +462,8 @@ def senden(payload):
                 raise ValueError("API hat die Annahme der Messung nicht bestätigt.")
             log(f"OK: L1={payload['l1_v']} L2={payload['l2_v']} L3={payload['l3_v']} V, "
                 f"f={payload.get('grid_frequency_hz', '-')} Hz"
-                f"{spannweite_anzeigen(payload)}")
+                f"{spannweite_anzeigen(payload)}"
+                + (f", PV-Prognose {payload['pv_forecast_kwh']} kWh" if "pv_forecast_kwh" in payload else ""))
             return True
     except urllib.error.HTTPError as fehler:
         log(f"HTTP {fehler.code}: {fehler.read().decode(errors='replace')}")
