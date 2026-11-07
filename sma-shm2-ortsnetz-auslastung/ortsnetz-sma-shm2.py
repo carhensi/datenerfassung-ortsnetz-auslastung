@@ -60,6 +60,9 @@ METER_SERIAL = konfig("METER_SERIAL", None, int)    # z. B. 3011478221
 
 INTERVAL_S = konfig("INTERVAL_S", 300, int)     # alle 5 Minuten
 
+# Optional: installierte PV-Leistung des Messorts in kWp (API-Feld plant_capacity_kwp).
+PLANT_CAPACITY_KWP = konfig("PLANT_CAPACITY_KWP", None)   # z. B. 9.8
+
 # Optionale externe Quelle für die Netzfrequenz, falls der Zähler keine liefert
 # (z. B. SMA Energy Meter). Die Adresse muss JSON liefern; FREQUENCY_KEY ist der
 # Schlüssel des Werts in Hz, verschachtelte Schlüssel mit Punkt getrennt.
@@ -69,7 +72,7 @@ FREQUENCY_KEY = konfig("FREQUENCY_KEY", None, str)
 # -----------------------------------------------
 
 API_URL = "https://www.ortsnetz-auslastung.de/v1/measurements"
-VERSION = "sma-shm2-0.1.0"
+VERSION = "sma-shm2-0.2.0"
 
 MCAST_GRP = "239.12.255.254"
 MCAST_PORT = 9522
@@ -98,6 +101,8 @@ def konfiguration_pruefen():
         raise ValueError("INTERVAL_S muss größer als 0 sein.")
     if METER_SERIAL is not None and not 0 <= METER_SERIAL <= 0xFFFFFFFF:
         raise ValueError("METER_SERIAL muss eine vorzeichenlose 32-Bit-Zahl sein.")
+    if PLANT_CAPACITY_KWP is not None and not 0 < PLANT_CAPACITY_KWP <= 1000:
+        raise ValueError("PLANT_CAPACITY_KWP muss größer als 0 und maximal 1000 sein.")
     try:
         socket.inet_pton(socket.AF_INET, INTERFACE_IP)
     except OSError:
@@ -202,6 +207,8 @@ def payload_erstellen(werte):
         "l3_v": spannung(werte, 3),
         "integration_version": VERSION,
     }
+    if PLANT_CAPACITY_KWP is not None:
+        payload["plant_capacity_kwp"] = PLANT_CAPACITY_KWP
 
     frequenz = zaehler_frequenz(werte)
     if frequenz is None and FREQUENCY_URL is not None:

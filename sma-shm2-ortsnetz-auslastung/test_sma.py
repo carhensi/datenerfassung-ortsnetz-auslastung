@@ -40,7 +40,7 @@ class SmaBasis(unittest.TestCase):
         self.addCleanup(self.stack.close)
         self.stack.enter_context(patch.multiple(
             sma, LATITUDE=52.5, LONGITUDE=13.4, METER_SERIAL=None,
-            INTERVAL_S=300, INTERFACE_IP="0.0.0.0",
+            INTERVAL_S=300, INTERFACE_IP="0.0.0.0", PLANT_CAPACITY_KWP=None,
             FREQUENCY_URL=None, FREQUENCY_KEY=None))
         self.ausgabe = io.StringIO()
         self.stack.enter_context(contextlib.redirect_stdout(self.ausgabe))
@@ -80,6 +80,15 @@ class SmaTest(SmaBasis):
         self.assertEqual(set(payload), {
             "observed_at", "latitude", "longitude", "l1_v", "l2_v", "l3_v",
             "grid_frequency_hz", "integration_version"})
+
+    def test_pv_leistung_nur_wenn_konfiguriert(self):
+        self.assertNotIn("plant_capacity_kwp", sma.payload_erstellen({32: 230000}))
+        with patch.object(sma, "PLANT_CAPACITY_KWP", 9.8):
+            self.assertEqual(sma.payload_erstellen({32: 230000})["plant_capacity_kwp"], 9.8)
+        for wert in (0, -1, 1000.5):
+            with patch.object(sma, "PLANT_CAPACITY_KWP", wert), self.subTest(wert=wert):
+                with self.assertRaisesRegex(ValueError, "PLANT_CAPACITY_KWP"):
+                    sma.konfiguration_pruefen()
 
     def test_version_vor_zwischen_und_nach_messwerten(self):
         for daten in (VERSION + SPANNUNGEN, SPANNUNGEN[:8] + VERSION + SPANNUNGEN[8:],

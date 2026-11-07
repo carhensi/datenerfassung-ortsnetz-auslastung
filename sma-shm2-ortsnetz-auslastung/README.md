@@ -62,6 +62,7 @@ LONGITUDE = None            # z. B. 13.404954
 INTERFACE_IP = "0.0.0.0"    # bei mehreren Interfaces: lokale IP im Zähler-Netz
 METER_SERIAL = None         # nur bei mehreren EMETER-Geräten nötig
 INTERVAL_S = 300
+PLANT_CAPACITY_KWP = None   # optional: installierte PV-Leistung in kWp, z. B. 9.8
 FREQUENCY_URL = None        # optional: externe Frequenzquelle (JSON über http/https)
 FREQUENCY_KEY = None        # Schlüssel des Frequenzwerts in Hz, z. B. "Fac"
 ```
